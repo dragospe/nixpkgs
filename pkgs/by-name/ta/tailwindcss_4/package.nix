@@ -5,6 +5,8 @@
   versionCheckHook,
   autoPatchelfHook,
   makeWrapper,
+  useWatchman ? false,
+  watchman ? null,
 }:
 let
   version = "4.1.4";
@@ -29,6 +31,7 @@ let
     }
     .${system} or throwSystem;
 in
+assert useWatchman -> watchman != null;
 stdenv.mkDerivation {
   inherit version;
   pname = "tailwindcss_4";
@@ -53,9 +56,9 @@ stdenv.mkDerivation {
 
   # libstdc++.so.6 for @parcel/watcher
   postFixup = ''
-    wrapProgram $out/bin/tailwindcss --prefix LD_LIBRARY_PATH : ${
-      lib.makeLibraryPath [ stdenv.cc.cc.lib ]
-    }
+    wrapProgram $out/bin/tailwindcss \
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ stdenv.cc.cc.lib ]} \
+       ${if useWatchman then "--prefix PATH : ${lib.makeBinPath [ watchman ]}" else ""}
   '';
 
   nativeInstallCheckInputs = [ versionCheckHook ];
